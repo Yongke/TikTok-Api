@@ -3,6 +3,8 @@ from urllib.parse import urlencode
 from typing import TYPE_CHECKING, Iterator
 from .user import User
 from ..exceptions import InvalidResponseException
+import os
+from datetime import datetime
 
 if TYPE_CHECKING:
     from ..tiktok import TikTokApi
@@ -12,6 +14,16 @@ class Search:
     """Contains static methods about searching TikTok for a phrase."""
 
     parent: TikTokApi
+
+    @staticmethod
+    def generate_search_id():
+        # get the current datetime and format it as YYYYMMDDHHMMSS
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        # calculate the length of the random hex required for the total length (32)
+        random_hex_length = (32 - len(timestamp)) // 2  # calculate bytes needed
+        random_hex = os.urandom(random_hex_length).hex()[:random_hex_length].upper()
+        random_id = timestamp + random_hex
+        return random_id
 
     @staticmethod
     async def users(search_term, count=10, cursor=0, **kwargs) -> Iterator[User]:
@@ -70,14 +82,15 @@ class Search:
                     # do something
         """
         found = 0
+        search_id = Search.generate_search_id()
         while found < count:
             params = {
                 "keyword": search_term,
-                "cursor": cursor,
+                "offset": cursor,
                 "from_page": "search",
+                "search_id": search_id,
                 "web_search_code": """{"tiktok":{"client_params_x":{"search_engine":{"ies_mt_user_live_video_card_use_libra":1,"mt_search_general_user_live_card":1}},"search_server":{}}}""",
             }
-
             resp = await Search.parent.make_request(
                 url=f"https://www.tiktok.com/api/search/{obj_type}/full/",
                 params=params,
@@ -101,10 +114,15 @@ class Search:
                     found += 1
             elif obj_type == "general":
                 for sub in resp.get("data", []):
-                    yield Search.parent.video(data=sub.get("item"))
-                    found += 1
+                    item = sub.get("item")
+                    if item is not None:
+                        yield Search.parent.video(data=item)
+                        found += 1
 
             if not resp.get("has_more", False):
                 return
 
             cursor = resp.get("cursor")
+            print(
+                f'Searching "{search_term}"..., found: {found}, next cursor: {cursor}'
+            )
