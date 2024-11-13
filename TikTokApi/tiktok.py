@@ -179,6 +179,9 @@ class TikTokApi:
             )
 
         await page.goto(url)
+        time.sleep(3)
+        await page.mouse.move(212,964)
+        await page.mouse.move(328,120)        
 
         session = TikTokPlaywrightSession(
             context,
