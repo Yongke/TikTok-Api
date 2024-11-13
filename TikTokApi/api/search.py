@@ -99,6 +99,10 @@ class Search:
                         sec_uid=sec_uid, user_id=uid, username=username
                     )
                     found += 1
+            elif obj_type == "general":
+                for sub in resp.get("data", []):
+                    yield Search.parent.video(data=sub.get("item"))
+                    found += 1
 
             if not resp.get("has_more", False):
                 return
