@@ -111,7 +111,7 @@ class Hashtag:
         while found < count:
             params = {
                 "challengeID": self.id,
-                "count": 35,
+                "count": 30,
                 "cursor": cursor,
             }
 
@@ -133,7 +133,7 @@ class Hashtag:
 
             if not resp.get("hasMore", False):
                 return
-
+            print(f'video by hashtag, cursor: {cursor}, found: {found}, challenge id: {self.id}')
             cursor = resp.get("cursor")
 
     def __extract_from_data(self):
